@@ -22,6 +22,12 @@
 	<string>1</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<!-- Google Mobile Ads application ID. This is Google's official TEST ID.
+	     TODO(Henry): Before any App Store / TestFlight release, replace with
+	     your real AdMob App ID (AdMob → Apps → Molten → App settings).
+	     Shipping with the test ID serves only test ads (no revenue). -->
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-3940256099942544~3347511713</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIRequiredDeviceCapabilities</key>

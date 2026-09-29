@@ -29,6 +29,8 @@ struct StudioView: View {
     }
 
     @EnvironmentObject private var store: GameStore
+    @EnvironmentObject private var storeManager: StoreManager
+    @EnvironmentObject private var adsManager: AdsManager
     @State private var step: Step = .pickShape
     @State private var selectedShape: PieceShape = .vase
     @State private var selectedColor: PieceColor = .ember
@@ -36,6 +38,8 @@ struct StudioView: View {
     @State private var hasPickedShape = false
     @State private var gatherQuality: Double = 0
     @State private var shapeQuality: Double = 0
+    /// A locked premium color the player tapped — shows the unlock sheet.
+    @State private var lockedColor: PieceColor?
 
     var body: some View {
         Group {
@@ -101,26 +105,46 @@ struct StudioView: View {
                         .foregroundColor(.white.opacity(0.9))
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 10) {
                         ForEach(PieceColor.allCases) { color in
+                            let available = storeManager.isColorAvailable(color)
                             Button {
-                                selectedColor = color
-                                Haptics.selection()
+                                if available {
+                                    selectedColor = color
+                                    Haptics.selection()
+                                } else {
+                                    lockedColor = color
+                                    Haptics.light()
+                                }
                             } label: {
-                                Circle()
-                                    .fill(color.swiftUIColor)
-                                    .frame(width: 44, height: 44)
-                                    .overlay(
-                                        Circle()
-                                            .stroke(Color.orange, lineWidth: selectedColor == color ? 3 : 0)
-                                            .padding(-5)
-                                    )
+                                ZStack(alignment: .bottomTrailing) {
+                                    Circle()
+                                        .fill(color.swiftUIColor)
+                                        .frame(width: 44, height: 44)
+                                        .opacity(available ? 1 : 0.45)
+                                        .overlay(
+                                            Circle()
+                                                .stroke(Color.orange, lineWidth: selectedColor == color ? 3 : 0)
+                                                .padding(-5)
+                                        )
+                                    if !available {
+                                        Image(systemName: "lock.fill")
+                                            .font(.caption2)
+                                            .foregroundColor(.white)
+                                            .padding(5)
+                                            .background(Color.black.opacity(0.65))
+                                            .clipShape(Circle())
+                                            .offset(x: 4, y: 4)
+                                    }
+                                }
                             }
-                            .accessibilityLabel(color.displayName)
+                            .accessibilityLabel(available ? color.displayName : "\(color.displayName), locked")
                         }
                     }
                 }
 
                 Button {
                     Haptics.medium()
+                    // Consume a single-use rewarded-ad unlock as the piece begins.
+                    storeManager.consumeAdUnlock(for: selectedColor)
                     step = .gather
                 } label: {
                     Text("Gather molten glass →")
@@ -135,6 +159,9 @@ struct StudioView: View {
                 .padding(.bottom, 24)
             }
             .padding(.horizontal, 20)
+        }
+        .sheet(item: $lockedColor) { color in
+            UnlockColorSheet(color: color, onUnlocked: { selectedColor = color })
         }
     }
 
@@ -289,6 +316,10 @@ struct StudioView: View {
                 HStack(spacing: 12) {
                     Button {
                         store.addPiece(draftPiece)
+                        // Throttled interstitial: at most 1 per 3 pieces, never
+                        // first session, never with Remove Ads. Safe here —
+                        // the result screen is a natural break, not mid-game.
+                        adsManager.pieceCompleted()
                         Haptics.success()
                         reset()
                     } label: {
@@ -342,4 +373,124 @@ struct StudioView: View {
         shapeQuality = 0
         step = .pickShape
     }
+}
+
+// MARK: - Premium color unlock sheet
+
+/// Offered when the player taps a locked premium color: watch a rewarded ad
+/// to use it once, or buy its pack for permanent unlock. No dead buttons —
+/// the ad option only appears when rewarded ads are actually available.
+struct UnlockColorSheet: View {
+    let color: PieceColor
+    let onUnlocked: () -> Void
+
+    @EnvironmentObject private var storeManager: StoreManager
+    @EnvironmentObject private var adsManager: AdsManager
+    @Environment(\.dismiss) private var dismiss
+    @State private var adFailed = false
+
+    private var pack: ColorPack? { color.pack }
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                Circle()
+                    .fill(color.swiftUIColor)
+                    .frame(width: 90, height: 90)
+                    .overlay(Circle().stroke(Color.orange, lineWidth: 3).padding(-6))
+                    .padding(.top, 24)
+
+                Text("\(color.displayName) Glass")
+                    .font(.title2.weight(.bold))
+                    .foregroundColor(.white)
+                Text("A premium color from the \(pack?.displayName ?? "color packs").")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.65))
+                    .multilineTextAlignment(.center)
+
+                VStack(spacing: 12) {
+                    if canWatchAd {
+                        Button {
+                            Haptics.medium()
+                            adsManager.showRewarded(for: .premiumColor(color)) { earned in
+                                if earned {
+                                    storeManager.grantAdColorUnlock(color)
+                                    onUnlocked()
+                                    dismiss()
+                                } else {
+                                    adFailed = true
+                                }
+                            }
+                        } label: {
+                            Label("Watch Ad to Use Once", systemImage: "play.tv")
+                                .font(.headline.weight(.semibold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(adsManager.isRewardedReady ? Color.orange : Color.white.opacity(0.12))
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                        }
+                        .disabled(!adsManager.isRewardedReady)
+                        if !adsManager.isRewardedReady {
+                            Text("Ad is loading — try again in a moment.")
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.5))
+                        }
+                        if adFailed {
+                            Text("The ad wasn't available. Please try again.")
+                                .font(.caption)
+                                .foregroundColor(.red.opacity(0.8))
+                        }
+                    }
+
+                    if let pack {
+                        Button {
+                            Haptics.medium()
+                            Task { await storeManager.purchase(productID: pack.productID) }
+                        } label: {
+                            HStack {
+                                Text("Buy \(pack.displayName)")
+                                Spacer()
+                                if storeManager.isPurchasing {
+                                    ProgressView()
+                                } else {
+                                    Text(storeManager.priceString(for: pack.productID, fallback: pack.fallbackPrice))
+                                        .fontWeight(.semibold)
+                                }
+                            }
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .padding(.vertical, 14)
+                            .padding(.horizontal, 18)
+                            .background(Color.white.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                        }
+                        .disabled(storeManager.isPurchasing)
+                    }
+                }
+                .padding(.horizontal, 20)
+
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .background(Color(white: 0.07).ignoresSafeArea())
+            .navigationTitle("Premium Color")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+            .onChange(of: storeManager.isColorAvailable(color)) { _, available in
+                if available {
+                    onUnlocked()
+                    dismiss()
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+
+    /// Rewarded ads only make sense when ads aren't removed entirely.
+    private var canWatchAd: Bool { !adsManager.isRemoveAdsEnabled }
 }

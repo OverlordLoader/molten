@@ -3,11 +3,18 @@
 
 Hand-writing 24-hex object IDs is error-prone, so IDs are derived from a
 counter. The output is a standard Xcode project: one iOS application target
-named "Molten", 15 Swift sources, portrait-only, iOS 17+.
+named "Molten", 18 Swift sources, portrait-only, iOS 17+, plus the
+Google Mobile Ads Swift package (rewarded + interstitial ads).
 """
 from pathlib import Path
 
 OUT = Path(__file__).resolve().parent.parent / "Molten.xcodeproj" / "project.pbxproj"
+
+# Google Mobile Ads via Swift Package Manager. Pinned to the 11.x line
+# (upToNextMajorVersion from 11.0.0) because its API surface is the one the
+# AdsManager was written against; bumping to 12.x is a future option.
+GMA_REPO = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git"
+GMA_MIN_VERSION = "11.0.0"
 
 SOURCES = [
     ("MoltenApp.swift", "Molten"),
@@ -15,6 +22,8 @@ SOURCES = [
     ("Game/Models.swift", "Game"),
     ("Game/GameStore.swift", "Game"),
     ("Game/Haptics.swift", "Game"),
+    ("Game/StoreManager.swift", "Game"),
+    ("Game/AdsManager.swift", "Game"),
     ("Game/GlassRenderer.swift", "Game"),
     ("Game/DemoScene.swift", "Game"),
     ("Game/GatherScene.swift", "Game"),
@@ -25,6 +34,7 @@ SOURCES = [
     ("Views/GalleryView.swift", "Views"),
     ("Views/ShowcaseView.swift", "Views"),
     ("Views/MiniGameHost.swift", "Views"),
+    ("Views/SettingsView.swift", "Views"),
 ]
 
 _counter = [0]
@@ -39,6 +49,11 @@ build_files = {s: nid() for s, _ in SOURCES}
 file_refs = {s: nid() for s, _ in SOURCES}
 info_plist_ref = nid()
 app_ref = nid()
+
+# Swift Package Manager: Google Mobile Ads
+gma_pkg_ref = nid()        # XCRemoteSwiftPackageReference
+gma_product_dep = nid()    # XCSwiftPackageProductDependency
+gma_build_file = nid()     # PBXBuildFile (GoogleMobileAds in Frameworks)
 
 main_group = nid()
 molten_group = nid()
@@ -82,6 +97,7 @@ A("/* Begin PBXBuildFile section */")
 for s, _ in SOURCES:
     name = s.split("/")[-1]
     A(f"\t\t{build_files[s]} /* {name} in Sources */ = {{isa = PBXBuildFile; fileRef = {file_refs[s]} /* {name} */; }};")
+A(f"\t\t{gma_build_file} /* GoogleMobileAds in Frameworks */ = {{isa = PBXBuildFile; productRef = {gma_product_dep} /* GoogleMobileAds */; }};")
 A("/* End PBXBuildFile section */")
 
 # --- PBXFileReference ---
@@ -101,6 +117,7 @@ A(f"\t\t{frameworks_phase} /* Frameworks */ = {{")
 A("\t\t\tisa = PBXFrameworksBuildPhase;")
 A("\t\t\tbuildActionMask = 2147483647;")
 A("\t\t\tfiles = (")
+A(f"\t\t\t\t{gma_build_file} /* GoogleMobileAds in Frameworks */,")
 A("\t\t\t);")
 A("\t\t\trunOnlyForDeploymentPostprocessing = 0;")
 A("\t\t};")
@@ -208,6 +225,9 @@ A("\t\t\t\ten,")
 A("\t\t\t\tBase,")
 A("\t\t\t);")
 A("\t\t\tmainGroup = " + main_group + ";")
+A("\t\t\tpackageReferences = (")
+A(f"\t\t\t\t{gma_pkg_ref} /* XCRemoteSwiftPackageReference \"swift-package-manager-google-mobile-ads\" */,")
+A("\t\t\t);")
 A("\t\t\tproductRefGroup = " + products_group + " /* Products */;")
 A("\t\t\tprojectDirPath = \"\";")
 A("\t\t\tprojectRoot = \"\";")
@@ -243,6 +263,27 @@ A("\t\t\t);")
 A("\t\t\trunOnlyForDeploymentPostprocessing = 0;")
 A("\t\t};")
 A("/* End PBXSourcesBuildPhase section */")
+
+# --- XCRemoteSwiftPackageReference + XCSwiftPackageProductDependency ---
+A("")
+A("/* Begin XCRemoteSwiftPackageReference section */")
+A(f"\t\t{gma_pkg_ref} /* XCRemoteSwiftPackageReference \"swift-package-manager-google-mobile-ads\" */ = {{")
+A("\t\t\tisa = XCRemoteSwiftPackageReference;")
+A(f"\t\t\trepositoryURL = \"{GMA_REPO}\";")
+A("\t\t\trequirement = {")
+A("\t\t\t\tkind = upToNextMajorVersion;")
+A(f"\t\t\t\tminimumVersion = {GMA_MIN_VERSION};")
+A("\t\t\t};")
+A("\t\t};")
+A("/* End XCRemoteSwiftPackageReference section */")
+A("")
+A("/* Begin XCSwiftPackageProductDependency section */")
+A(f"\t\t{gma_product_dep} /* GoogleMobileAds */ = {{")
+A("\t\t\tisa = XCSwiftPackageProductDependency;")
+A(f"\t\t\tpackage = {gma_pkg_ref} /* XCRemoteSwiftPackageReference \"swift-package-manager-google-mobile-ads\" */;")
+A("\t\t\tproductName = GoogleMobileAds;")
+A("\t\t};")
+A("/* End XCSwiftPackageProductDependency section */")
 
 # --- XCBuildConfiguration ---
 A("")

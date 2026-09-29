@@ -94,6 +94,70 @@ Differences from the other apps (Molten is native Swift, not Capacitor):
 5. Actions → "Apple App Store release" → Run workflow on `main`, set build
    number, choose upload or validation-only.
 
+## Monetization setup (milestone 2)
+
+The game ships with ads + in-app purchases fully wired. Two dashboards need
+Henry's input — **nothing here can be done by anyone but the account owner.**
+
+### A. App Store Connect — create 4 in-app purchase products
+
+App Store Connect → Molten → In-App Purchases. Product IDs must match
+**exactly** (the code references these strings):
+
+| Product ID | Type | Price | Display name |
+|---|---|---|---|
+| `app.molten.studio.removeads` | Non-Consumable | $4.99 | Remove Ads |
+| `app.molten.studio.colorpack.aurora` | Non-Consumable | $1.99 | Aurora Pack |
+| `app.molten.studio.colorpack.inferno` | Non-Consumable | $1.99 | Inferno Pack |
+| `app.molten.studio.colorpack.abyss` | Non-Consumable | $1.99 | Abyss Pack |
+
+Each color pack permanently unlocks 2 glass colors (Aurora+Opal,
+Magma+Solar, Abyss+Void). "Remove Ads" disables all rewarded and
+interstitial ads immediately, on all devices (restorable via the in-app
+"Restore Purchases" button, which Apple requires).
+
+Until the products exist, the Settings screen shows fallback prices and
+purchases fail gracefully with a "not available" message — the game itself
+is unaffected.
+
+### B. AdMob — replace test IDs with real ones
+
+1. Create an AdMob account at https://admob.com, add app "Molten"
+   (iOS, bundle `app.molten.studio`) → copy the **App ID**.
+2. Create two ad units: one **Rewarded**, one **Interstitial** → copy their IDs.
+3. In code, replace:
+   - `Molten/Info.plist` → `GADApplicationIdentifier` (currently Google's
+     official test ID, marked with a TODO comment)
+   - `Molten/Game/AdsManager.swift` → `rewardedAdUnitID` /
+     `interstitialAdUnitID` in the `#else` (Release) block, marked
+     `TODO(Henry)`
+4. Debug builds always use Google's official test IDs — safe to develop with.
+
+While the Release IDs are empty, Release builds simply show no ads (safe
+default — never test ads in production).
+
+### C. Get paid (one-time, covers all Henry's apps)
+
+- **App Store:** App Store Connect → Agreements → sign the **Paid
+  Applications** agreement; add bank account + tax forms under
+  "Agreements, Tax, and Banking". Apple pays monthly (~33 days after month
+  end). Enroll in the **App Store Small Business Program** to keep 85%
+  instead of 70% (under $1M/year).
+- **AdMob:** AdMob → Payments → verify identity, add bank account. Google
+  pays monthly once earnings pass $100.
+
+### How it behaves
+
+- **Rewarded ads** (player opts in): "Watch Ad to Use Once" on locked
+  premium colors; "Rush kiln" reward is implemented in `AdsManager.Reward`
+  for the kiln milestone to consume — no UI for it yet (no dead buttons).
+- **Interstitials:** at most 1 per 3 finished pieces, only from the result
+  screen (never mid-mini-game), never on the first session, never with
+  Remove Ads owned.
+- **Offline:** ad loads fail silently; the game is fully playable.
+- **Privacy:** AdMob is the only network SDK. No analytics, no tracking,
+  no ATT prompt, no sign-in.
+
 ## Game-feel tuning notes (milestone 1)
 
 Feel is the product in casual games, so these were tuned deliberately:
@@ -121,22 +185,29 @@ Feel is the product in casual games, so these were tuned deliberately:
 
 - No sign-in of any kind. No accounts, no Game Center.
 - No external billing, no web links, no `openURL` calls anywhere (the release
-  check script fails the build if one appears).
-- Fully playable offline — no network code at all.
-- Zero data collection: no analytics/tracking SDKs (also enforced by the check
-  script). Gallery persists to local UserDefaults only.
+  check script fails the build if one appears). All purchases via StoreKit 2.
+- Fully playable offline — no required network calls. AdMob is the only
+  network SDK; ad loads fail gracefully offline and the game is unaffected.
+- Zero data collection beyond AdMob's own ad serving: no analytics/tracking
+  SDKs (also enforced by the check script; GoogleMobileAds is explicitly
+  allow-listed as the ad network). No ATT prompt, no sign-in. Gallery and
+  purchase cache persist to local UserDefaults only.
 - `ITSAppUsesNonExemptEncryption = false` declared (no crypto).
 - Every button on screen works; no placeholder or dead UI.
 
 ## Roadmap
 
-- **M2 — Kiln & economy:** anneal with real-time cooling, variable-reward
+- **M2 — Monetization (done 2026-09-29):** AdMob via SPM (rewarded +
+  throttled interstitial, test IDs in DEBUG, TODO-marked Release IDs),
+  StoreKit 2 (Remove Ads $4.99 + 3 color packs $1.99, verified transactions,
+  restore purchases), Settings store screen, premium-color lock/unlock flow
+  in the Studio (watch-ad single use or pack purchase), 6 new premium colors.
+- **M3 — Kiln & economy:** anneal with real-time cooling, variable-reward
   reveal (common/rare finishes, crack risk), sell prices, furnace/kiln upgrades,
-  coin balance.
-- **M3 — Retention & monetization:** daily commissions + streaks, 120-piece
-  catalog, prestige, AdMob rewarded/interstitial, IAP (remove ads, color packs),
-  "Master Pass" subscription.
-- **M4 — Polish & submit:** App Store metadata, screenshots, 1024px icon,
+  coin balance. Consumes the existing `AdsManager.Reward.rushKiln` reward.
+- **M4 — Retention:** daily commissions + streaks, 120-piece catalog,
+  prestige, "Master Pass" subscription.
+- **M5 — Polish & submit:** App Store metadata, screenshots, 1024px icon,
   TestFlight, review submission.
 
 ## License

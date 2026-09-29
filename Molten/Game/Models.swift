@@ -18,8 +18,24 @@ enum PieceShape: String, CaseIterable, Codable, Identifiable {
 
 enum PieceColor: String, CaseIterable, Codable, Identifiable {
     case ember, ocean, forest, violet, rose, frost
+    // Premium colors — locked until their color pack is purchased
+    // (or a single color is unlocked for one piece via rewarded ad).
+    case aurora, opal      // Aurora Pack
+    case magma, solar      // Inferno Pack
+    case abyss, void       // Abyss Pack
 
     var id: String { rawValue }
+
+    /// The color pack this color belongs to, or nil for the 6 base colors
+    /// that are always available.
+    var pack: ColorPack? {
+        switch self {
+        case .aurora, .opal: return .aurora
+        case .magma, .solar: return .inferno
+        case .abyss, .void: return .abyss
+        default: return nil
+        }
+    }
 
     var displayName: String {
         switch self {
@@ -29,6 +45,12 @@ enum PieceColor: String, CaseIterable, Codable, Identifiable {
         case .violet: return "Violet"
         case .rose: return "Rose"
         case .frost: return "Frost"
+        case .aurora: return "Aurora"
+        case .opal: return "Opal"
+        case .magma: return "Magma"
+        case .solar: return "Solar"
+        case .abyss: return "Abyss"
+        case .void: return "Void"
         }
     }
 
@@ -40,6 +62,12 @@ enum PieceColor: String, CaseIterable, Codable, Identifiable {
         case .violet: return Color(red: 0.55, green: 0.30, blue: 0.85)
         case .rose: return Color(red: 0.95, green: 0.35, blue: 0.55)
         case .frost: return Color(red: 0.65, green: 0.85, blue: 0.95)
+        case .aurora: return Color(red: 0.20, green: 0.90, blue: 0.70)
+        case .opal: return Color(red: 0.95, green: 0.88, blue: 0.95)
+        case .magma: return Color(red: 0.75, green: 0.12, blue: 0.08)
+        case .solar: return Color(red: 1.0, green: 0.80, blue: 0.20)
+        case .abyss: return Color(red: 0.08, green: 0.15, blue: 0.35)
+        case .void: return Color(red: 0.15, green: 0.08, blue: 0.22)
         }
     }
 
@@ -51,6 +79,12 @@ enum PieceColor: String, CaseIterable, Codable, Identifiable {
         case .violet: return SKColor(red: 0.55, green: 0.30, blue: 0.85, alpha: 1.0)
         case .rose: return SKColor(red: 0.95, green: 0.35, blue: 0.55, alpha: 1.0)
         case .frost: return SKColor(red: 0.65, green: 0.85, blue: 0.95, alpha: 1.0)
+        case .aurora: return SKColor(red: 0.20, green: 0.90, blue: 0.70, alpha: 1.0)
+        case .opal: return SKColor(red: 0.95, green: 0.88, blue: 0.95, alpha: 1.0)
+        case .magma: return SKColor(red: 0.75, green: 0.12, blue: 0.08, alpha: 1.0)
+        case .solar: return SKColor(red: 1.0, green: 0.80, blue: 0.20, alpha: 1.0)
+        case .abyss: return SKColor(red: 0.08, green: 0.15, blue: 0.35, alpha: 1.0)
+        case .void: return SKColor(red: 0.15, green: 0.08, blue: 0.22, alpha: 1.0)
         }
     }
 
@@ -62,8 +96,47 @@ enum PieceColor: String, CaseIterable, Codable, Identifiable {
         case .violet: return SKColor(red: 0.75, green: 0.55, blue: 1.0, alpha: 1.0)
         case .rose: return SKColor(red: 1.0, green: 0.60, blue: 0.75, alpha: 1.0)
         case .frost: return SKColor(red: 0.90, green: 0.97, blue: 1.0, alpha: 1.0)
+        case .aurora: return SKColor(red: 0.45, green: 1.0, blue: 0.85, alpha: 1.0)
+        case .opal: return SKColor(red: 1.0, green: 0.95, blue: 1.0, alpha: 1.0)
+        case .magma: return SKColor(red: 1.0, green: 0.35, blue: 0.15, alpha: 1.0)
+        case .solar: return SKColor(red: 1.0, green: 0.92, blue: 0.45, alpha: 1.0)
+        case .abyss: return SKColor(red: 0.25, green: 0.40, blue: 0.75, alpha: 1.0)
+        case .void: return SKColor(red: 0.35, green: 0.20, blue: 0.50, alpha: 1.0)
         }
     }
+}
+
+/// A purchasable color pack: 2 premium glass colors, yours forever.
+enum ColorPack: String, CaseIterable, Identifiable {
+    case aurora, inferno, abyss
+
+    var id: String { rawValue }
+
+    /// Must match the product created in App Store Connect exactly.
+    var productID: String { "app.molten.studio.colorpack.\(rawValue)" }
+
+    var displayName: String {
+        switch self {
+        case .aurora: return "Aurora Pack"
+        case .inferno: return "Inferno Pack"
+        case .abyss: return "Abyss Pack"
+        }
+    }
+
+    var tagline: String {
+        switch self {
+        case .aurora: return "Shimmering northern-light glass"
+        case .inferno: return "Forged in the heart of the volcano"
+        case .abyss: return "Colors from the deep dark"
+        }
+    }
+
+    var colors: [PieceColor] {
+        PieceColor.allCases.filter { $0.pack == self }
+    }
+
+    /// Fallback price shown if the App Store product hasn't loaded yet.
+    var fallbackPrice: String { "$1.99" }
 }
 
 struct GlassPiece: Identifiable, Codable {

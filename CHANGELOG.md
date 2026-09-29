@@ -3,6 +3,69 @@
 Running log of every change, kept current per Henry's standing rule so his
 other AI tools can see what changed and what was added.
 
+## 2026-09-29 — Milestone 2: monetization (ads + in-app purchases)
+
+### Added
+- `Game/AdsManager.swift` — Google Mobile Ads wrapper (`@MainActor`,
+  `ObservableObject`): SDK start, rewarded ads with earned-reward callback,
+  interstitial ads throttled to max 1 per 3 finished pieces (only from the
+  result screen, never mid-mini-game, never on first app session), graceful
+  offline failure (loads just fail, game unaffected). `disableAds()` kills
+  everything the moment Remove Ads is purchased. DEBUG builds use Google's
+  official test ad units; Release builds use empty TODO(Henry)-marked
+  constants (no ads until Henry pastes real IDs — safe default).
+- `Game/StoreManager.swift` — StoreKit 2 purchases: product IDs
+  `app.molten.studio.removeads` ($4.99 non-consumable),
+  `app.molten.studio.colorpack.{aurora,inferno,abyss}` ($1.99 non-consumable
+  each); transaction verification + `finish()`; live transaction listener
+  (handles refunds/revokes/family sharing); `AppStore.sync()` restore;
+  single-use rewarded-ad color unlock persisted across launches.
+- `Game/Models.swift` — 6 new premium `PieceColor` cases (aurora, opal,
+  magma, solar, abyss, void) with SwiftUI/SpriteKit/glow colors; new
+  `ColorPack` enum (productID, display name, tagline, colors, fallback price).
+  `PieceColor.pack` returns nil for the 6 always-free base colors.
+- `Views/SettingsView.swift` — new Settings tab (gear icon): Remove Ads row
+  (live App Store price or "Owned"), 3 color-pack rows with color-dot
+  previews, working Restore Purchases with result message. All rows
+  functional; purchasing shows spinner; errors surface via alert.
+- `Views/StudioView.swift` — color picker now shows all 12 colors; locked
+  premium colors show a lock badge; tapping opens `UnlockColorSheet` (watch
+  rewarded ad to use once, or buy the pack — ad option hidden entirely when
+  Remove Ads is owned); ad unlock consumed when the piece starts.
+  "Add to Gallery" now also triggers the throttled interstitial check.
+- `MoltenApp.swift` / `ContentView.swift` — new `StoreManager` +
+  `AdsManager` state objects injected as environment objects; purchases
+  restore before ads start; Remove Ads purchase immediately disables ads.
+- `Molten/Info.plist` — `GADApplicationIdentifier` with Google's official
+  test App ID + TODO comment (Henry must replace before release).
+- `tools/gen_pbxproj.py` — 18 Swift sources; adds the Google Mobile Ads
+  Swift package (upToNextMajorVersion from 11.0.0) via
+  XCRemoteSwiftPackageReference + XCSwiftPackageProductDependency, linked
+  into the Frameworks phase. `project.pbxproj` regenerated and verified
+  (all file refs resolve).
+- `scripts/apple-release-check.py` — GoogleMobileAds removed from banned
+  imports (now the intentional ad network); new check that
+  `GADApplicationIdentifier` is present in Info.plist. All 13 checks PASS.
+- `README.md` — new "Monetization setup" section: exact IAP product ID
+  table for App Store Connect, AdMob account/ad-unit checklist with the
+  exact code locations to paste real IDs, one-time banking/tax steps for
+  Apple + Google payouts; review-safety section updated (AdMob is the only
+  network SDK); roadmap updated (M2 done, kiln/economy now M3).
+
+### Deliberately NOT in milestone 2
+- Kiln/anneal, economy, commissions, catalog, prestige, Master Pass
+  (unchanged from M1 roadmap).
+- Real AdMob IDs (Henry's AdMob account) and App Store Connect IAP products
+  (Henry's developer account) — documented in README, cannot be delegated.
+- The `AdsManager.Reward.rushKiln` case is implemented in the manager API
+  but has no UI yet — the kiln milestone will call it. No dead buttons.
+
+### Notes
+- First Xcode/SPM build will resolve the Google Mobile Ads package from
+  GitHub (needs network on the Mac runner — standard for SPM).
+- `import GoogleMobileAds` will fail to compile until Xcode resolves the
+  package — expected, not a code error.
+
 ## 2026-09-29 — Milestone 1: scaffold + visual core + gather/shape mini-games
 
 ### Added

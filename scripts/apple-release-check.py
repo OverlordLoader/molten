@@ -18,15 +18,22 @@ EXPECTED_DISPLAY_NAME = "Molten"
 MIN_DEPLOYMENT = (17, 0)
 
 # Third-party SDKs that would violate the zero-data-collection promise.
+# NOTE: GoogleMobileAds is intentionally NOT banned — it is the app's ad
+# network (rewarded + interstitial), added in milestone 2. No other
+# analytics/tracking SDKs are allowed.
 BANNED_IMPORTS = [
     "Firebase",
-    "GoogleMobileAds",
     "AppTrackingTransparency",
     "AdSupport",
     "Facebook",
     "Amplitude",
     "Mixpanel",
 ]
+
+# AdMob test IDs that must never ship in a Release build. The check below
+# only verifies presence of the app ID key; replacing test IDs with real
+# ones is a documented manual step in README ("Monetization setup").
+ADMOB_TEST_APP_ID = "ca-app-pub-3940256099942544~3347511713"
 
 failures = []
 
@@ -50,6 +57,9 @@ def main():
         orientations = info.get("UISupportedInterfaceOrientations", [])
         check(orientations == ["UIInterfaceOrientationPortrait"],
               "portrait-only orientations declared")
+        check(info.get("GADApplicationIdentifier") == ADMOB_TEST_APP_ID,
+              "GADApplicationIdentifier present (AdMob test ID — Henry must "
+              "replace with the real AdMob App ID before release; see README)")
 
     pbx = ROOT / "Molten.xcodeproj" / "project.pbxproj"
     check(pbx.exists(), "Molten.xcodeproj/project.pbxproj exists")
