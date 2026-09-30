@@ -1,3 +1,15 @@
+## 2026-09-30 - Qualify the static session key
+
+Native compilation rejected instance access to the static session key. Qualify reads with Self.sessionsKey; no advertising or session-count behavior changes.
+
+## 2026-09-30 — Unsigned native simulator verification
+
+Added a free public macOS compile/startup workflow, evidence capture, and a shared Xcode scheme where missing. Supports opening the existing game on Henry's MacBook without App Store submission. No paid service, signing or purchase. Build status is reported separately from full gameplay acceptance.
+
+## 2026-09-29 — Add guarded Apple release workflow
+
+Added manual-only main-branch signing with a repository-specific protected environment, immutable action versions, release-safety checks and opt-in TestFlight upload. No workflow dispatch or store submission performed. Apple app records, signed-device QA and truthful advertising/privacy metadata remain required.
+
 # CHANGELOG — Molten
 
 Running log of every change, kept current per Henry's standing rule so his
@@ -147,3 +159,11 @@ other AI tools can see what changed and what was added.
 - Henry must create the `app-store-release-molten` GitHub environment with an
   App Store provisioning profile for `app.molten.studio` before the first
   signed release (see README).
+
+
+## September 30, 2026 - Independent source verification
+
+Declared the app-scoped UserDefaults required-reason API (CA92.1), based on the app's actual preferences and local save calls. This does not certify App Store privacy answers or third-party SDK behavior. Final signed archive privacy reports and actual-device/network behavior remain release gates.
+Added the missing app privacy manifest and Resources build entry. App-owned state remains local; the Google Mobile Ads SDK privacy manifest, collection, consent, and release configuration still require a combined archive/privacy review before distribution. An empty app-owned collection list is not a zero-collection claim about the SDK.
+
+Corrected the ad manager to use the GAD-prefixed Swift names and method labels required by the already-pinned Google Mobile Ads 11.x package. Google documents the prefix removal as a 12.x change; no package upgrade or ad activation was made. Xcode compilation remains unverified on Windows.

@@ -26,6 +26,7 @@
 		000000000000000000000011 /* MiniGameHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000023 /* MiniGameHost.swift */; };
 		000000000000000000000012 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000024 /* SettingsView.swift */; };
 		000000000000000000000029 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 000000000000000000000028 /* GoogleMobileAds */; };
+		00000000000000000000003B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000003A /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -49,6 +50,7 @@
 		000000000000000000000024 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		000000000000000000000025 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		000000000000000000000026 /* Molten.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Molten.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		00000000000000000000003A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,6 +79,7 @@
 				000000000000000000000013,
 				000000000000000000000014,
 				000000000000000000000025,
+				00000000000000000000003A,
 				00000000000000000000002C,
 				00000000000000000000002D,
 			);
@@ -181,6 +184,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				00000000000000000000003B /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
