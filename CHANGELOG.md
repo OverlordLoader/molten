@@ -1,3 +1,7 @@
+## 2026-09-30 — Unsigned native simulator verification
+
+Added a free public macOS compile/startup workflow, evidence capture, and a shared Xcode scheme where missing. Supports opening the existing game on Henry's MacBook without App Store submission. No paid service, signing or purchase. Build status is reported separately from full gameplay acceptance.
+
 ## 2026-09-29 — Add guarded Apple release workflow
 
 Added manual-only main-branch signing with a repository-specific protected environment, immutable action versions, release-safety checks and opt-in TestFlight upload. No workflow dispatch or store submission performed. Apple app records, signed-device QA and truthful advertising/privacy metadata remain required.
