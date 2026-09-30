@@ -198,7 +198,7 @@ def run_release():
     pbx_path.write_text(configure_project(original, bundle, profile_uuid, build))
     try:
         archive = WORK / "Molten.xcarchive"
-        run(["xcodebuild", "-project", "Molten.xcodeproj", "-target", "Molten",
+        run(["xcodebuild", "-project", "Molten.xcodeproj", "-scheme", "Molten",
              "-configuration", "Release",
              "-destination", "generic/platform=iOS",
              "-archivePath", str(archive), "archive"], cwd=ROOT)
@@ -208,7 +208,7 @@ def run_release():
             '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" '
             '"http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n'
             '<plist version="1.0"><dict>\n'
-            "<key>method</key><string>app-store</string>\n"
+            "<key>method</key><string>app-store-connect</string>\n"
             f"<key>teamID</key><string>{TEAM}</string>\n"
             "<key>uploadSymbols</key><true/>\n"
             "</dict></plist>\n")
