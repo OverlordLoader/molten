@@ -75,6 +75,10 @@ tgt_release = nid()
 proj_config_list = nid()
 tgt_config_list = nid()
 
+# Append IDs to preserve all existing project object identities.
+privacy_ref = nid()
+privacy_build_file = nid()
+
 
 def q(s):
     return s
@@ -98,6 +102,7 @@ for s, _ in SOURCES:
     name = s.split("/")[-1]
     A(f"\t\t{build_files[s]} /* {name} in Sources */ = {{isa = PBXBuildFile; fileRef = {file_refs[s]} /* {name} */; }};")
 A(f"\t\t{gma_build_file} /* GoogleMobileAds in Frameworks */ = {{isa = PBXBuildFile; productRef = {gma_product_dep} /* GoogleMobileAds */; }};")
+A(f"\t\t{privacy_build_file} /* PrivacyInfo.xcprivacy in Resources */ = {{isa = PBXBuildFile; fileRef = {privacy_ref} /* PrivacyInfo.xcprivacy */; }};")
 A("/* End PBXBuildFile section */")
 
 # --- PBXFileReference ---
@@ -108,6 +113,7 @@ for s, _ in SOURCES:
     A(f"\t\t{file_refs[s]} /* {name} */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = {name}; sourceTree = \"<group>\"; }};")
 A(f"\t\t{info_plist_ref} /* Info.plist */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = \"<group>\"; }};")
 A(f"\t\t{app_ref} /* Molten.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Molten.app; sourceTree = BUILT_PRODUCTS_DIR; }};")
+A(f'\t\t{privacy_ref} /* PrivacyInfo.xcprivacy */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; }};')
 A("/* End PBXFileReference section */")
 
 # --- PBXFrameworksBuildPhase ---
@@ -138,6 +144,7 @@ molten_children = [
     file_refs["MoltenApp.swift"],
     file_refs["ContentView.swift"],
     info_plist_ref,
+    privacy_ref,
     game_group,
     views_group,
 ]
@@ -244,6 +251,7 @@ A(f"\t\t{resources_phase} /* Resources */ = {{")
 A("\t\t\tisa = PBXResourcesBuildPhase;")
 A("\t\t\tbuildActionMask = 2147483647;")
 A("\t\t\tfiles = (")
+A(f"\t\t\t\t{privacy_build_file} /* PrivacyInfo.xcprivacy in Resources */,")
 A("\t\t\t);")
 A("\t\t\trunOnlyForDeploymentPostprocessing = 0;")
 A("\t\t};")

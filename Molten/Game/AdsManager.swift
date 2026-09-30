@@ -47,8 +47,8 @@ final class AdsManager: NSObject, ObservableObject {
 
     @Published private(set) var isRewardedReady = false
 
-    private var rewardedAd: RewardedAd?
-    private var interstitialAd: InterstitialAd?
+    private var rewardedAd: GADRewardedAd?
+    private var interstitialAd: GADInterstitialAd?
     private var piecesSinceInterstitial = 0
     private var pendingRewardCompletion: ((Bool) -> Void)?
 
@@ -68,7 +68,7 @@ final class AdsManager: NSObject, ObservableObject {
     // MARK: - Lifecycle
 
     func start() {
-        MobileAds.shared.start(completionHandler: nil)
+        GADMobileAds.sharedInstance().start(completionHandler: nil)
         #if DEBUG
         print("[Ads] SDK started (DEBUG — test ad units)")
         #endif
@@ -93,7 +93,7 @@ final class AdsManager: NSObject, ObservableObject {
             isRewardedReady = false
             return
         }
-        RewardedAd.load(with: Self.rewardedAdUnitID, request: Request()) { [weak self] ad, error in
+        GADRewardedAd.load(withAdUnitID: Self.rewardedAdUnitID, request: GADRequest()) { [weak self] ad, error in
             guard let self else { return }
             Task { @MainActor in
                 if let ad {
@@ -126,7 +126,7 @@ final class AdsManager: NSObject, ObservableObject {
         ad.fullScreenContentDelegate = self
         // The reward handler fires later, on the main thread, if the user
         // watches long enough to earn the reward.
-        ad.present(from: root) { [weak self] in
+        ad.present(fromRootViewController: root) { [weak self] in
             Task { @MainActor in self?.pendingEarnedFlag = true }
         }
     }
@@ -137,7 +137,7 @@ final class AdsManager: NSObject, ObservableObject {
 
     func loadInterstitial() {
         guard !isRemoveAdsEnabled, !Self.interstitialAdUnitID.isEmpty else { return }
-        InterstitialAd.load(with: Self.interstitialAdUnitID, request: Request()) { [weak self] ad, error in
+        GADInterstitialAd.load(withAdUnitID: Self.interstitialAdUnitID, request: GADRequest()) { [weak self] ad, error in
             guard let self else { return }
             Task { @MainActor in
                 self.interstitialAd = ad
@@ -163,7 +163,7 @@ final class AdsManager: NSObject, ObservableObject {
               let root = Self.rootViewController() else { return }
         piecesSinceInterstitial = 0
         ad.fullScreenContentDelegate = self
-        ad.present(from: root)
+        ad.present(fromRootViewController: root)
     }
 
     // MARK: - Helpers
@@ -177,13 +177,13 @@ final class AdsManager: NSObject, ObservableObject {
     }
 }
 
-// MARK: - FullScreenContentDelegate
+// MARK: - GADFullScreenContentDelegate
 
-extension AdsManager: FullScreenContentDelegate {
-    nonisolated func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) {
+extension AdsManager: GADFullScreenContentDelegate {
+    nonisolated func adDidDismissFullScreenContent(_ ad: GADFullScreenPresentingAd) {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            if ad is RewardedAd {
+            if ad is GADRewardedAd {
                 let earned = self.pendingEarnedFlag
                 self.pendingEarnedFlag = false
                 self.pendingRewardCompletion?(earned)
@@ -197,13 +197,13 @@ extension AdsManager: FullScreenContentDelegate {
         }
     }
 
-    nonisolated func ad(_ ad: FullScreenPresentingAd, didFailToPresentFullScreenContentWithError error: Error) {
+    nonisolated func ad(_ ad: GADFullScreenPresentingAd, didFailToPresentFullScreenContentWithError error: Error) {
         Task { @MainActor [weak self] in
             guard let self else { return }
             #if DEBUG
             print("[Ads] failed to present: \(error.localizedDescription)")
             #endif
-            if ad is RewardedAd {
+            if ad is GADRewardedAd {
                 self.pendingRewardCompletion?(false)
                 self.pendingRewardCompletion = nil
                 self.rewardedAd = nil
