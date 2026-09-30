@@ -1,3 +1,7 @@
+## 2026-09-30 - Qualify the static session key
+
+Native compilation rejected instance access to the static session key. Qualify reads with Self.sessionsKey; no advertising or session-count behavior changes.
+
 ## 2026-09-30 — Unsigned native simulator verification
 
 Added a free public macOS compile/startup workflow, evidence capture, and a shared Xcode scheme where missing. Supports opening the existing game on Henry's MacBook without App Store submission. No paid service, signing or purchase. Build status is reported separately from full gameplay acceptance.

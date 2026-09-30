@@ -57,12 +57,12 @@ final class AdsManager: NSObject, ObservableObject {
     /// Incremented once per app launch (MoltenApp init). Interstitials never
     /// show on the very first session — let the player fall in love first.
     static func bumpSessionCount() {
-        let n = UserDefaults.standard.integer(forKey: sessionsKey)
+        let n = UserDefaults.standard.integer(forKey: Self.sessionsKey)
         UserDefaults.standard.set(n + 1, forKey: sessionsKey)
     }
 
     private var sessionCount: Int {
-        UserDefaults.standard.integer(forKey: sessionsKey)
+        UserDefaults.standard.integer(forKey: Self.sessionsKey)
     }
 
     // MARK: - Lifecycle
