@@ -1,3 +1,4 @@
+#if canImport(GoogleMobileAds)
 import GoogleMobileAds
 import UIKit
 
@@ -215,3 +216,30 @@ extension AdsManager: FullScreenContentDelegate {
         }
     }
 }
+#else
+import UIKit
+
+/// Mac test build: the Google Mobile Ads SDK ships no Mac Catalyst library, so
+/// ads are compiled out. Rewarded "ads" grant the reward immediately so every
+/// reward path can be tested; interstitials never show.
+@MainActor
+final class AdsManager: NSObject, ObservableObject {
+    enum Reward {
+        case premiumColor(PieceColor)
+        case rushKiln
+    }
+    var isRemoveAdsEnabled = false
+    @Published private(set) var isRewardedReady = true
+    private static let sessionsKey = "molten.sessions.v1"
+    static func bumpSessionCount() {
+        let n = UserDefaults.standard.integer(forKey: sessionsKey)
+        UserDefaults.standard.set(n + 1, forKey: sessionsKey)
+    }
+    func start() {}
+    func disableAds() { isRemoveAdsEnabled = true }
+    func loadRewarded() {}
+    func showRewarded(for reward: Reward, completion: @escaping (Bool) -> Void) { completion(!isRemoveAdsEnabled) }
+    func loadInterstitial() {}
+    func pieceCompleted() {}
+}
+#endif
